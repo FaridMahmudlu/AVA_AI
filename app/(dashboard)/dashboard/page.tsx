@@ -79,7 +79,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link 
-            href="/demo" 
+            href="/dashboard/analyze" 
             className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-md transition-all hover:bg-slate-50 hover:scale-105 active:scale-95 whitespace-nowrap"
           >
             <Play className="h-4 w-4 fill-current" /> Yeni Analiz Başlat
@@ -153,7 +153,7 @@ export default async function DashboardPage() {
                 <h2 className="text-lg font-bold tracking-tight text-slate-900">Son Analizler</h2>
                 <p className="text-sm text-slate-500 mt-1">Sisteme yüklediğiniz en son videoların durumu.</p>
               </div>
-              <Link href="/demo" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-blue-700">
+              <Link href="/dashboard/analyze" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-blue-700">
                 Tümünü Gör <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -169,7 +169,7 @@ export default async function DashboardPage() {
                     Yapay zeka analizini test etmek ve kanalınızı büyütmek için hemen ilk videonuzu ekleyin.
                   </p>
                   <Link 
-                    href="/demo" 
+                    href="/dashboard/analyze" 
                     className="mt-6 flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-slate-800 hover:shadow-md"
                   >
                     Videonuzu Yükleyin <ArrowRight className="h-4 w-4" />
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-0 border-slate-100 pt-3 sm:pt-0">
                         <StatusBadge status={v.status} />
-                        <Link href={`/demo/analyze`} className="text-sm font-medium text-primary hover:underline">
+                        <Link href={`/dashboard/analyze`} className="text-sm font-medium text-primary hover:underline">
                           Detaylar
                         </Link>
                       </div>
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
             
             {recentVideos.length > 0 && (
               <div className="border-t border-slate-100 bg-slate-50/50 p-4 text-center sm:hidden">
-                <Link href="/demo" className="text-sm font-semibold text-primary">Tüm Videoları Gör</Link>
+                <Link href="/dashboard/analyze" className="text-sm font-semibold text-primary">Tüm Videoları Gör</Link>
               </div>
             )}
           </div>
@@ -233,7 +233,7 @@ export default async function DashboardPage() {
                 </div>
               </Link>
 
-              <Link href="/demo/analyze" className="group flex items-center gap-4 rounded-xl border border-slate-100 p-3 transition-colors hover:border-emerald-200 hover:bg-emerald-50/50">
+              <Link href="/dashboard/analyze" className="group flex items-center gap-4 rounded-xl border border-slate-100 p-3 transition-colors hover:border-emerald-200 hover:bg-emerald-50/50">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-transform group-hover:scale-110">
                   <BarChart3 className="h-5 w-5" />
                 </div>

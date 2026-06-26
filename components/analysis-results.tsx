@@ -4,198 +4,163 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Clock, Info, TrendingUp, Volume2, Camera, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, CheckCircle2, Info, TrendingUp, Volume2, Camera, MessageSquare, Copy, X, Loader2, Film } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useState } from "react";
 
-interface AnalysisMetric {
-  id: string;
-  name: string;
-  score: number; // 1 to 10
-  description: string;
-  timestamp?: string;
-  type?: "success" | "warning" | "error" | "info";
+interface AnalysisResultsProps {
+  score: number | null;
+  caption: string | null;
+  sections: { key: string; title: string; content: string }[];
+  result: string;
+  isLoading: boolean;
+  videoFile: File | null;
+  frames: string[];
+  clearVideo: () => void;
+  onAnalyze: () => void;
 }
 
-interface CategoryData {
-  id: string;
-  title: string;
-  icon: React.ReactNode;
-  score: number;
-  metrics: AnalysisMetric[];
-}
+export function AnalysisResults({ score, caption, sections, result, isLoading, videoFile, frames, clearVideo, onAnalyze }: AnalysisResultsProps) {
+  const [captionCopied, setCaptionCopied] = useState(false);
 
-const mockData: CategoryData[] = [
-  {
-    id: "technical",
-    title: "Texniki",
-    icon: <Camera className="w-4 h-4" />,
-    score: 8.5,
-    metrics: [
-      { id: "t1", name: "Görüntü Kalitesi", score: 9, description: "1080p veya üzeri çözünürlük tespit edildi.", type: "success" },
-      { id: "t2", name: "Işıklandırma", score: 7, description: "Yüz bölgesinde hafif gölgelenmeler var.", timestamp: "0:12", type: "warning" },
-      { id: "t3", name: "Kamera Stabilitesi", score: 10, description: "Sarsıntı yok, akıcı görüntüler.", type: "success" },
-      { id: "t4", name: "Kadro Uyumu", score: 8, description: "Dikey formata (9:16) uygun.", type: "success" },
-    ]
-  },
-  {
-    id: "sound",
-    title: "Səs",
-    icon: <Volume2 className="w-4 h-4" />,
-    score: 6.8,
-    metrics: [
-      { id: "s1", name: "Ses Netliği", score: 6, description: "Arka plan gürültüsü konuşmayı bastırıyor.", timestamp: "0:03", type: "error" },
-      { id: "s2", name: "Ses Yüksekliği", score: 8, description: "Genel ses seviyesi uygun.", type: "success" },
-      { id: "s3", name: "Müzik Uyumu", score: 5, description: "Seçilen müzik trend değil ve ses seviyesi yüksek.", timestamp: "0:15", type: "warning" },
-      { id: "s4", name: "Diksiyon ve Vurgu", score: 9, description: "Kelimeler anlaşılır ve vurgular doğru.", type: "success" },
-    ]
-  },
-  {
-    id: "content",
-    title: "Məzmun",
-    icon: <MessageSquare className="w-4 h-4" />,
-    score: 9.2,
-    metrics: [
-      { id: "c1", name: "Kanca (Hook) Etkisi", score: 10, description: "İlk 3 saniye çok güçlü ve merak uyandırıcı.", timestamp: "0:00", type: "success" },
-      { id: "c2", name: "Hikaye Anlatımı", score: 9, description: "Akıcı ve izleyiciyi tutan bir yapı var.", type: "success" },
-      { id: "c3", name: "Harekete Geçirici Mesaj (CTA)", score: 8, description: "Videonun sonunda net bir yönlendirme var.", timestamp: "0:45", type: "success" },
-      { id: "c4", name: "Özgünlük", score: 9, description: "İçerik konsepti orijinal ve dikkat çekici.", type: "success" },
-    ]
-  },
-  {
-    id: "algorithmic",
-    title: "Algoritmik",
-    icon: <TrendingUp className="w-4 h-4" />,
-    score: 7.5,
-    metrics: [
-      { id: "a1", name: "İzlenme Süresi Potansiyeli", score: 8, description: "Videonun temposu izleyiciyi sıkmıyor.", type: "success" },
-      { id: "a2", name: "Etkileşim Tetikleyicileri", score: 6, description: "Yorum yapmaya teşvik eden sorular eksik.", type: "warning" },
-      { id: "a3", name: "Trend Uyumu", score: 7, description: "Konu güncel fakat kullanılan ses eski.", type: "warning" },
-      { id: "a4", name: "Tekrar İzlenme Olasılığı", score: 9, description: "Eğitici/değer katan içeriği sayesinde kaydedilme oranı yüksek olabilir.", type: "success" },
-    ]
-  }
-];
-
-export function AnalysisResults() {
   const getScoreColor = (score: number) => {
-    if (score >= 8) return "bg-green-500";
-    if (score >= 6) return "bg-yellow-500";
+    if (score >= 80) return "bg-green-500";
+    if (score >= 60) return "bg-yellow-500";
     return "bg-red-500";
   };
 
-  const getTypeIcon = (type?: string) => {
-    switch (type) {
-      case "success": return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case "warning": return <AlertCircle className="w-4 h-4 text-yellow-500" />;
-      case "error": return <AlertCircle className="w-4 h-4 text-red-500" />;
-      default: return <Info className="w-4 h-4 text-blue-500" />;
-    }
+  const copyCaption = async () => {
+    if (!caption) return;
+    try {
+      await navigator.clipboard.writeText(caption);
+      setCaptionCopied(true);
+      setTimeout(() => setCaptionCopied(false), 1200);
+    } catch {}
   };
+
+  const scoreLabel = score === null ? "" : score >= 80 ? "Güclü" : score >= 60 ? "Orta" : "Zəif";
+
+  function niceTextBlock(text: string) {
+    const t = (text || "").trim();
+    const lines = t.split("\n").map((l) => l.trim()).filter(Boolean);
+    const isList = lines.length > 1 && lines.every((l) => /^(\-|\d+\.)\s+/.test(l));
+    if (isList) {
+      return (
+        <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-foreground/90">
+          {lines.map((l, i) => (
+            <li key={`${i}-${l.slice(0, 12)}`}>
+              {l.replace(/^(\-|\d+\.)\s+/, "")}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return (
+      <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+        {t || "-"}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Analiz Nəticələri</h2>
-          <p className="text-muted-foreground mt-1">Videonuzun 40 fərqli parametr üzrə detallı analizi.</p>
+          <p className="text-muted-foreground mt-1">Süni zəka tərəfindən çıxarılan detallı performans rəyləri.</p>
         </div>
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border">
           <div className="text-center">
             <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mb-1">Ümumi Xal</p>
             <div className="flex items-baseline justify-center gap-1">
               <span className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                8.0
+                {score !== null ? score : "-"}
               </span>
-              <span className="text-xl text-muted-foreground font-medium">/10</span>
+              <span className="text-xl text-muted-foreground font-medium">/100</span>
             </div>
+            {score !== null && <p className={`text-xs font-bold mt-1 ${score >= 80 ? 'text-green-500' : score >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{scoreLabel}</p>}
           </div>
         </div>
       </div>
 
-      <Alert className="bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800">
-        <TrendingUp className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-        <AlertTitle className="text-indigo-800 dark:text-indigo-300">AVA AI Tövsiyəsi</AlertTitle>
-        <AlertDescription className="text-indigo-700 dark:text-indigo-400/80">
-          Videonuzun ümumi keyfiyyəti çox yaxşıdır! Ancaq <strong>0:03'dəki səs problemi</strong> izləyicilərin qaçmasına səbəb ola bilər. Arxa plan səsini azaldıb, öz səsinizi ön plana çıxarmanız tövsiyə olunur.
-        </AlertDescription>
-      </Alert>
-
-      <Tabs defaultValue="technical" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 p-1 bg-slate-100/50 dark:bg-slate-900/50">
-          {mockData.map((category) => (
-            <TabsTrigger 
-              key={category.id} 
-              value={category.id}
-              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
-            >
-              {category.icon}
-              <span>{category.title}</span>
-              <Badge variant="secondary" className="ml-1 text-xs">
-                {category.score}
-              </Badge>
-            </TabsTrigger>
+      {/* Video Status Card */}
+      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-950 shadow-sm">
+        <div className="flex gap-2 p-2 overflow-x-auto no-scrollbar bg-slate-50 dark:bg-black/20 border-b border-slate-100 dark:border-slate-800">
+          {frames.map((frame, i) => (
+            <div key={i} className="h-16 w-28 shrink-0 rounded border border-slate-200 dark:border-slate-800 overflow-hidden">
+              <img src={frame} alt="kare" className="h-full w-full object-cover" />
+            </div>
           ))}
-        </TabsList>
+        </div>
+        <div className="flex items-center justify-between p-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+              <Film className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate max-w-[200px] sm:max-w-md">{videoFile?.name}</p>
+              <p className="text-xs text-slate-500">{(videoFile?.size ? (videoFile.size / (1024 * 1024)).toFixed(1) : 0)} MB • {frames.length} kadr çıxarıldı</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {!result && !isLoading && (
+               <Button onClick={onAnalyze} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                 Analizi Başlat
+               </Button>
+            )}
+            <Button variant="ghost" onClick={clearVideo} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+              <X className="h-4 w-4 mr-2" /> İmtina
+            </Button>
+          </div>
+        </div>
+      </div>
 
-        {mockData.map((category) => (
-          <TabsContent key={category.id} value={category.id} className="mt-6 focus-visible:outline-none focus-visible:ring-0">
-            <Card className="border-none shadow-md overflow-hidden bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm">
-              <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-white dark:bg-slate-800 rounded-lg shadow-sm border">
-                      {category.icon}
+      {isLoading && !result && (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
+          <span className="text-sm font-bold text-slate-500 animate-pulse">VİDEO SÜNİ ZƏKA İLƏ ANALİZ EDİLİR...</span>
+        </div>
+      )}
+
+      {(result || isLoading) && (
+        <div className="space-y-6">
+          <Alert className="bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800">
+            <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <div className="flex items-center justify-between">
+              <AlertTitle className="text-indigo-800 dark:text-indigo-300 font-bold text-base">Video Xülasəsi və Başlıq Tövsiyəsi</AlertTitle>
+              {caption && (
+                <Button variant="ghost" size="sm" onClick={copyCaption} className="h-7 px-3 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700">
+                  <Copy className="h-3 w-3 mr-1.5" /> {captionCopied ? "Kopyalandı" : "Kopyala"}
+                </Button>
+              )}
+            </div>
+            <AlertDescription className="text-indigo-700 dark:text-indigo-400/80 mt-2 text-sm">
+              {caption || "Xülasə yaradılır..."}
+            </AlertDescription>
+          </Alert>
+
+          {result && sections.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sections.filter(s => s.key !== "score" && s.key !== "raw").map((s) => (
+                <Card key={s.key} className="border-none shadow-md overflow-hidden bg-white dark:bg-slate-950">
+                  <CardHeader className="bg-slate-50 dark:bg-slate-900 border-b py-4">
+                    <CardTitle className="text-lg flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                      <span className="h-2 w-2 rounded-full bg-blue-600"></span>
+                      {s.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-5">
+                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {niceTextBlock(s.content)}
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">{category.title} Parametrləri</CardTitle>
-                      <CardDescription>Bu kateqoriya üzrə detallı performansınız</CardDescription>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-bold">{category.score}</span>
-                    <span className="text-muted-foreground text-sm">/10</span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  {category.metrics.map((metric) => (
-                    <div key={metric.id} className="group p-4 rounded-xl border bg-card hover:shadow-md transition-all duration-300">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-start gap-2">
-                          <div className="mt-1">{getTypeIcon(metric.type)}</div>
-                          <div>
-                            <h4 className="font-semibold text-sm leading-none mb-1">{metric.name}</h4>
-                            <p className="text-sm text-muted-foreground">{metric.description}</p>
-                          </div>
-                        </div>
-                        <div className="text-right ml-4 shrink-0">
-                          <span className="font-bold text-sm">{metric.score}</span>
-                          <span className="text-muted-foreground text-xs">/10</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Progress 
-                          value={metric.score * 10} 
-                          className="h-1.5 bg-slate-100 dark:bg-slate-800"
-                          indicatorClassName={getScoreColor(metric.score)}
-                        />
-                        
-                        {metric.timestamp && (
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 w-fit px-2 py-1 rounded-md">
-                            <Clock className="w-3.5 h-3.5" />
-                            Zaman: {metric.timestamp}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
