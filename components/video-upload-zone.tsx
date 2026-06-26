@@ -149,9 +149,9 @@ export function VideoUploadZone({ topic, setTopic, onFileSelect, isLoading }: Vi
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
         {[
-          { title: "Detaylı Metrikler", desc: "Süni zəka ilə 40 fərqli parametr üzrə dərin təhlil." },
-          { title: "Saniyə Əsaslı Rəy", desc: "Videonuzun hansı saniyəsində nə etməli olduğunuzu kəşf edin." },
-          { title: "Alqoritm Dostu", desc: "Tövsiyələrlə izlənmə potensialınızı maksimuma çatdırın." }
+          { title: "Detaylı Metrikler", desc: "Yapay zeka ile 40 farklı parametrede derin analiz." },
+          { title: "Saniye Bazlı Yorum", desc: "Videonuzun hangi saniyesinde ne yapmanız gerektiğini keşfedin." },
+          { title: "Algoritma Dostu", desc: "Tavsiyelerle izlenme potansiyelinizi maksimuma çıkarın." }
         ].map((feature, i) => (
           <div key={i} className="flex flex-col items-center text-center p-4 rounded-xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm">
             <Video className="w-6 h-6 text-indigo-500 mb-3" />

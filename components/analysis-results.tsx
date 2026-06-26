@@ -39,7 +39,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
     } catch {}
   };
 
-  const scoreLabel = score === null ? "" : score >= 80 ? "Güclü" : score >= 60 ? "Orta" : "Zəif";
+  const scoreLabel = score === null ? "" : score >= 80 ? "Güçlü" : score >= 60 ? "Orta" : "Zayıf";
 
   function niceTextBlock(text: string) {
     const t = (text || "").trim();
@@ -67,12 +67,12 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
     <div className="w-full max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Analiz Nəticələri</h2>
-          <p className="text-muted-foreground mt-1">Süni zəka tərəfindən çıxarılan detallı performans rəyləri.</p>
+          <h2 className="text-3xl font-bold tracking-tight">Analiz Sonuçları</h2>
+          <p className="text-muted-foreground mt-1">Yapay zeka tarafından çıkarılan detaylı performans raporları.</p>
         </div>
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border">
           <div className="text-center">
-            <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mb-1">Ümumi Xal</p>
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mb-1">Genel Puan</p>
             <div className="flex items-baseline justify-center gap-1">
               <span className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 {score !== null ? score : "-"}
@@ -100,7 +100,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold truncate max-w-[200px] sm:max-w-md">{videoFile?.name}</p>
-              <p className="text-xs text-slate-500">{(videoFile?.size ? (videoFile.size / (1024 * 1024)).toFixed(1) : 0)} MB • {frames.length} kadr çıxarıldı</p>
+              <p className="text-xs text-slate-500">{(videoFile?.size ? (videoFile.size / (1024 * 1024)).toFixed(1) : 0)} MB • {frames.length} kare çıkarıldı</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -110,7 +110,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
                </Button>
             )}
             <Button variant="ghost" onClick={clearVideo} className="text-red-500 hover:text-red-600 hover:bg-red-50">
-              <X className="h-4 w-4 mr-2" /> İmtina
+              <X className="h-4 w-4 mr-2" /> İptal Et
             </Button>
           </div>
         </div>
@@ -119,7 +119,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
       {isLoading && !result && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
-          <span className="text-sm font-bold text-slate-500 animate-pulse">VİDEO SÜNİ ZƏKA İLƏ ANALİZ EDİLİR...</span>
+          <span className="text-sm font-bold text-slate-500 animate-pulse">VİDEO YAPAY ZEKA İLE ANALİZ EDİLİYOR...</span>
         </div>
       )}
 
@@ -128,7 +128,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
           <Alert className="bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800">
             <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             <div className="flex items-center justify-between">
-              <AlertTitle className="text-indigo-800 dark:text-indigo-300 font-bold text-base">Video Xülasəsi və Başlıq Tövsiyəsi</AlertTitle>
+              <AlertTitle className="text-indigo-800 dark:text-indigo-300 font-bold text-base">Video Özeti ve Başlık Önerisi</AlertTitle>
               {caption && (
                 <Button variant="ghost" size="sm" onClick={copyCaption} className="h-7 px-3 text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700">
                   <Copy className="h-3 w-3 mr-1.5" /> {captionCopied ? "Kopyalandı" : "Kopyala"}
@@ -136,7 +136,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
               )}
             </div>
             <AlertDescription className="text-indigo-700 dark:text-indigo-400/80 mt-2 text-sm">
-              {caption || "Xülasə yaradılır..."}
+              {caption || "Özet oluşturuluyor..."}
             </AlertDescription>
           </Alert>
 
