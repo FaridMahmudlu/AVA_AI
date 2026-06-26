@@ -300,3 +300,29 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ── Clerk Custom Theme Variables Override ── */
+.cl-rootBox,
+.cl-userButtonPopoverCard,
+.cl-organizationSwitcherPopoverCard,
+.cl-modalBackdrop,
+.cl-dialog,
+.cl-card,
+[class^="cl-"] {
+  --background: hsl(210 33% 98%);
+  --foreground: hsl(222 47% 11%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222 47% 11%);
+  --muted: hsl(210 40% 96%);
+  --muted-foreground: hsl(215 16% 47%);
+  --primary: hsl(217 91% 60%);
+  --primary-foreground: hsl(0 0% 100%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(217 91% 60%);
+  --destructive: hsl(0 84% 60%);
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+}
+
