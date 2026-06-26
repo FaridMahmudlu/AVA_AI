@@ -87,40 +87,75 @@ export async function getSession() {
       where: { email },
     });
 
-    if (existingUser) {
-      // Update ID to the Clerk ID
-      user = await prisma.user.update({
-        where: { email },
-        data: { id: userId },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          createdAt: true,
-          socialMediaUsername: true,
-          fieldOfInterest: true,
-          profession: true,
-        },
-      });
-    } else {
-      // Create new user in our DB
-      user = await prisma.user.create({
-        data: {
-          id: userId,
-          email,
-          username: clerkUser.username || clerkUser.firstName || "kullanici",
-          passwordHash: "clerk-auth", // placeholder for required field
-        },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          createdAt: true,
-          socialMediaUsername: true,
-          fieldOfInterest: true,
-          profession: true,
-        },
-      });
+    try {
+      if (existingUser) {
+        // Update ID to the Clerk ID
+        user = await prisma.user.update({
+          where: { email },
+          data: { id: userId },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            createdAt: true,
+            socialMediaUsername: true,
+            fieldOfInterest: true,
+            profession: true,
+          },
+        });
+      } else {
+        // Create new user in our DB
+        user = await prisma.user.create({
+          data: {
+            id: userId,
+            email,
+            username: clerkUser.username || clerkUser.firstName || "kullanici",
+            passwordHash: "clerk-auth", // placeholder for required field
+          },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            createdAt: true,
+            socialMediaUsername: true,
+            fieldOfInterest: true,
+            profession: true,
+          },
+        });
+      }
+    } catch (dbErr: any) {
+      // Handle race condition: if another concurrent request created the user,
+      // a unique constraint violation (P2002) is thrown. We simply query the user again.
+      if (dbErr.code === "P2002") {
+        const fallbackUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            createdAt: true,
+            socialMediaUsername: true,
+            fieldOfInterest: true,
+            profession: true,
+          },
+        });
+        if (fallbackUser) {
+          return fallbackUser;
+        }
+      }
+
+      const fs = require("fs");
+      const errInfo = {
+        userId,
+        email,
+        clerkUser,
+        message: dbErr.message,
+        code: dbErr.code,
+        meta: dbErr.meta,
+        stack: dbErr.stack
+      };
+      fs.writeFileSync("c:\\Users\\seid2\\Desktop\\avalabs-main\\db-error.log", JSON.stringify(errInfo, null, 2), "utf-8");
+      throw dbErr;
     }
   }
 
