@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
 export default async function ProfilePage() {
-  const user = await getSession();
+  const user = (await getSession()) as any;
   if (!user) return null;
 
   const initials = user.username.slice(0, 2).toUpperCase();
@@ -42,6 +42,7 @@ export default async function ProfilePage() {
         </CardHeader>
         <CardContent>
           <ProfileForm
+            instagramConnected={!!(user as any).instagramAccessToken}
             defaultValues={{
               username: user.username,
               socialMediaUsername: user.socialMediaUsername ?? "",

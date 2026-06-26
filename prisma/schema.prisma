@@ -45,6 +45,8 @@ model User {
   passwordHash         String   @map("password_hash")
   googleAuthSecret     String?  @map("google_auth_secret")
   socialMediaUsername  String?  @map("social_media_username")
+  instagramAccessToken String?  @map("instagram_access_token")
+  instagramUserId      String?  @map("instagram_user_id")
   fieldOfInterest      String?  @map("field_of_interest")
   profession           String?  @map("profession")
   createdAt            DateTime @default(now()) @map("created_at")

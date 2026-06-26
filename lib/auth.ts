@@ -70,9 +70,11 @@ export async function getSession() {
       email: true,
       createdAt: true,
       socialMediaUsername: true,
+      instagramAccessToken: true,
+      instagramUserId: true,
       fieldOfInterest: true,
       profession: true,
-    },
+    } as any,
   });
 
   if (!user) {
@@ -99,9 +101,11 @@ export async function getSession() {
             email: true,
             createdAt: true,
             socialMediaUsername: true,
+            instagramAccessToken: true,
+            instagramUserId: true,
             fieldOfInterest: true,
             profession: true,
-          },
+          } as any,
         });
       } else {
         // Create new user in our DB
@@ -118,9 +122,11 @@ export async function getSession() {
             email: true,
             createdAt: true,
             socialMediaUsername: true,
+            instagramAccessToken: true,
+            instagramUserId: true,
             fieldOfInterest: true,
             profession: true,
-          },
+          } as any,
         });
       }
     } catch (dbErr: any) {
@@ -135,9 +141,11 @@ export async function getSession() {
             email: true,
             createdAt: true,
             socialMediaUsername: true,
+            instagramAccessToken: true,
+            instagramUserId: true,
             fieldOfInterest: true,
             profession: true,
-          },
+          } as any,
         });
         if (fallbackUser) {
           return fallbackUser;
