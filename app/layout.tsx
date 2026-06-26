@@ -1,6 +1,9 @@
 import React from "react"
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { trTR } from "@clerk/localizations";
+import { shadcn } from "@clerk/ui/themes";
 
 import "./globals.css";
 
@@ -34,8 +37,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        {children}
+        <ClerkProvider localization={trTR} appearance={{ theme: shadcn }}>
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );
 }
+

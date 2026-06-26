@@ -56,13 +56,13 @@ function verifySessionCookie(cookieValue: string): string | null {
   }
 }
 
+import { auth, currentUser } from "@clerk/nextjs/server";
+
 export async function getSession() {
-  const cookieStore = await cookies();
-  const value = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!value) return null;
-  const userId = verifySessionCookie(value);
+  const { userId } = await auth();
   if (!userId) return null;
-  const user = await prisma.user.findUnique({
+
+  let user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -74,6 +74,56 @@ export async function getSession() {
       profession: true,
     },
   });
+
+  if (!user) {
+    const clerkUser = await currentUser();
+    if (!clerkUser) return null;
+
+    const email = clerkUser.emailAddresses[0]?.emailAddress;
+    if (!email) return null;
+
+    // Check if user exists with this email (registered before Clerk migration)
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      // Update ID to the Clerk ID
+      user = await prisma.user.update({
+        where: { email },
+        data: { id: userId },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          createdAt: true,
+          socialMediaUsername: true,
+          fieldOfInterest: true,
+          profession: true,
+        },
+      });
+    } else {
+      // Create new user in our DB
+      user = await prisma.user.create({
+        data: {
+          id: userId,
+          email,
+          username: clerkUser.username || clerkUser.firstName || "kullanici",
+          passwordHash: "clerk-auth", // placeholder for required field
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          createdAt: true,
+          socialMediaUsername: true,
+          fieldOfInterest: true,
+          profession: true,
+        },
+      });
+    }
+  }
+
   return user;
 }
 
