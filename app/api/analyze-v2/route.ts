@@ -18,7 +18,7 @@ const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
 const openai = createOpenAI({ apiKey: openaiApiKey });
 const openaiClient = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
 
-export const maxDuration = 300; // 5 minutes max on Vercel
+export const maxDuration = 60; // 60 seconds max on Vercel Hobby plan
 
 export async function POST(req: Request) {
   let tempVideoPath = "";

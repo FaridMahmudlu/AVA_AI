@@ -156,7 +156,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
             </AlertDescription>
           </Alert>
 
-          {result && sections.length > 0 && (
+          {result && sections.some(s => s.key !== "score" && s.key !== "raw") && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {sections.filter(s => s.key !== "score" && s.key !== "raw").map((s) => (
                 <Card key={s.key} className="border-none shadow-md overflow-hidden bg-white dark:bg-slate-950">
@@ -176,7 +176,7 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
             </div>
           )}
 
-          {result && sections.length === 0 && (
+          {result && result.startsWith("Hata:") && (
             <Alert className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 mt-4">
               <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
               <AlertTitle className="text-red-800 dark:text-red-300 font-bold text-base">Sistem Mesajı / Hata</AlertTitle>
