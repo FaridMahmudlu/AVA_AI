@@ -19,9 +19,12 @@ interface AnalysisResultsProps {
   frames: string[];
   clearVideo: () => void;
   onAnalyze: () => void;
+  model: string;
+  setModel: (val: string) => void;
+  statusText?: string;
 }
 
-export function AnalysisResults({ score, caption, sections, result, isLoading, videoFile, frames, clearVideo, onAnalyze }: AnalysisResultsProps) {
+export function AnalysisResults({ score, caption, sections, result, isLoading, videoFile, frames, clearVideo, onAnalyze, model, setModel, statusText }: AnalysisResultsProps) {
   const [captionCopied, setCaptionCopied] = useState(false);
 
   const getScoreColor = (score: number) => {
@@ -105,9 +108,21 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
           </div>
           <div className="flex gap-2">
             {!result && !isLoading && (
-               <Button onClick={onAnalyze} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
-                 Analizi Başlat
-               </Button>
+              <div className="flex items-center gap-2 mr-2">
+                <select
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  className="h-10 px-3 py-2 bg-transparent text-sm font-medium border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash (Hızlı)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet (Güçlü)</option>
+                  <option value="gpt-4o">ChatGPT (GPT-4o)</option>
+                </select>
+                <Button onClick={onAnalyze} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                  Analizi Başlat
+                </Button>
+              </div>
             )}
             <Button variant="ghost" onClick={clearVideo} className="text-red-500 hover:text-red-600 hover:bg-red-50">
               <X className="h-4 w-4 mr-2" /> İptal Et
@@ -119,7 +134,9 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
       {isLoading && !result && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
-          <span className="text-sm font-bold text-slate-500 animate-pulse">VİDEO YAPAY ZEKA İLE ANALİZ EDİLİYOR...</span>
+          <span className="text-sm font-bold text-slate-500 animate-pulse">
+            {statusText || "VİDEO YAPAY ZEKA İLE ANALİZ EDİLİYOR..."}
+          </span>
         </div>
       )}
 

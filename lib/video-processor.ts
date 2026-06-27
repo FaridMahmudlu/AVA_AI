@@ -1,9 +1,12 @@
-import { exec } from "child_process";
-import { promisify } from "util";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import ffprobeInstaller from "@ffprobe-installer/ffprobe";
 import path from "path";
 import fs from "fs";
+import { promisify } from "util";
 
-const execAsync = promisify(exec);
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 export interface VideoMetadata {
   resolution: string;
@@ -15,75 +18,50 @@ export interface VideoMetadata {
   sizeBytes: number;
 }
 
-export interface VideoAnalysisResult {
-  metadata: VideoMetadata;
-  scores: Record<string, number>; // 40 parameters scored 1-10
-  suggestions: Array<{ timestamp: string; parameter: string; comment: string }>;
-  overallScore: number;
+export interface AudioMetrics {
+  lufs: number;
+  silencePeriods: Array<{ start: number; end: number; duration: number }>;
 }
 
-/**
- * Helper to run a command and return stdout.
- */
-async function runCmd(cmd: string): Promise<string> {
-  const { stdout } = await execAsync(cmd);
-  return stdout.trim();
-}
+const ffprobeAsync = promisify<string, ffmpeg.FfprobeData>(ffmpeg.ffprobe);
 
 /**
- * Extracts metadata using ffprobe. Falls back to mock metadata if ffprobe is not installed.
+ * Extracts metadata using ffprobe.
  */
 export async function extractMetadata(filePath: string): Promise<VideoMetadata> {
-  try {
-    const ffprobeCmd = `ffprobe -v error -show_entries format=duration,size,bit_rate -show_entries stream=width,height,r_frame_rate,codec_name -of json "${filePath}"`;
-    const output = await runCmd(ffprobeCmd);
-    const data = JSON.parse(output);
+  const data = await ffprobeAsync(filePath);
+  const stream = data.streams.find((s: ffmpeg.FfprobeStream) => s.codec_type === "video") || data.streams[0];
+  const format = data.format;
 
-    const stream = data.streams?.[0] || {};
-    const format = data.format || {};
+  const width = stream?.width || 1080;
+  const height = stream?.height || 1920;
+  const duration = Number(format.duration) || 0;
+  const sizeBytes = Number(format.size) || 0;
+  const bitrate = Number(format.bit_rate) || 0;
+  const codec = stream?.codec_name || "unknown";
 
-    const width = Number(stream.width) || 1080;
-    const height = Number(stream.height) || 1920;
-    const duration = Number(format.duration) || 0;
-    const sizeBytes = Number(format.size) || 0;
-    const bitrate = Number(format.bit_rate) || 0;
-    const codec = stream.codec_name || "h264";
-
-    // Parse FPS
-    let fps = 30;
-    if (stream.r_frame_rate) {
-      const [num, den] = stream.r_frame_rate.split("/").map(Number);
-      if (den > 0) {
-        fps = Math.round(num / den);
-      }
+  // Parse FPS
+  let fps = 30;
+  if (stream?.r_frame_rate) {
+    const [num, den] = stream.r_frame_rate.split("/").map(Number);
+    if (den > 0) {
+      fps = Math.round(num / den);
     }
-
-    return {
-      resolution: `${width}x${height}`,
-      aspectRatio: `${width}:${height}`,
-      fps,
-      bitrate,
-      duration,
-      codec,
-      sizeBytes,
-    };
-  } catch (error) {
-    console.warn("FFmpeg/ffprobe not found or failed, using mock metadata fallbacks:", error);
-    // Return standard mock metadata (9:16 portrait video)
-    return {
-      resolution: "1080x1920",
-      aspectRatio: "9:16",
-      fps: 30,
-      bitrate: 4500000,
-      duration: 15.4,
-      codec: "h264",
-      sizeBytes: 8660000,
-    };
   }
+
+  return {
+    resolution: `${width}x${height}`,
+    aspectRatio: `${width}:${height}`,
+    fps,
+    bitrate,
+    duration,
+    codec,
+    sizeBytes,
+  };
 }
 
 /**
- * Extracts frames at a specific interval. Falls back to mock frame files.
+ * Extracts frames at a specific interval.
  */
 export async function extractFrames(
   filePath: string,
@@ -94,29 +72,27 @@ export async function extractFrames(
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  try {
-    const ffmpegCmd = `ffmpeg -i "${filePath}" -vf "fps=1/${intervalSec}" -vsync vsc -q:v 2 "${path.join(outputDir, "frame_%03d.jpg")}"`;
-    await runCmd(ffmpegCmd);
-
-    const files = fs.readdirSync(outputDir);
-    return files
-      .filter((f) => f.startsWith("frame_") && f.endsWith(".jpg"))
-      .map((f) => path.join(outputDir, f));
-  } catch (error) {
-    console.warn("FFmpeg failed to extract frames, using mock frames:", error);
-    // Mock extraction
-    const mockFrames = [];
-    for (let i = 1; i <= 5; i++) {
-      const mockPath = path.join(outputDir, `mock_frame_${i}.jpg`);
-      fs.writeFileSync(mockPath, "mock image data placeholder");
-      mockFrames.push(mockPath);
-    }
-    return mockFrames;
-  }
+  return new Promise((resolve, reject) => {
+    ffmpeg(filePath)
+      .outputOptions([`-vf fps=1/${intervalSec}`])
+      .output(path.join(outputDir, "frame_%03d.jpg"))
+      .on("end", () => {
+        const files = fs.readdirSync(outputDir);
+        resolve(
+          files
+            .filter((f) => f.startsWith("frame_") && f.endsWith(".jpg"))
+            .map((f) => path.join(outputDir, f))
+        );
+      })
+      .on("error", (err: Error) => {
+        reject(err);
+      })
+      .run();
+  });
 }
 
 /**
- * Extracts audio track from video. Falls back to generating a mock empty audio.
+ * Extracts audio track from video as an MP3 file.
  */
 export async function extractAudio(filePath: string, outputPath: string): Promise<string> {
   const dir = path.dirname(outputPath);
@@ -124,89 +100,53 @@ export async function extractAudio(filePath: string, outputPath: string): Promis
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  try {
-    const ffmpegCmd = `ffmpeg -y -i "${filePath}" -vn -acodec libmp3lame -q:a 4 "${outputPath}"`;
-    await runCmd(ffmpegCmd);
-    return outputPath;
-  } catch (error) {
-    console.warn("FFmpeg audio extraction failed, using mock audio file:", error);
-    fs.writeFileSync(outputPath, "mock audio mp3 content");
-    return outputPath;
-  }
+  return new Promise((resolve, reject) => {
+    ffmpeg(filePath)
+      .noVideo()
+      .audioCodec("libmp3lame")
+      .audioQuality(4) // Variable bitrate quality (0-9, 4 is decent)
+      .save(outputPath)
+      .on("end", () => resolve(outputPath))
+      .on("error", (err: Error) => reject(err));
+  });
 }
 
 /**
- * Formulate 40-Parameter Haiku Prompt for AVA AI.
+ * Extracts advanced audio metrics (LUFS and Silences).
  */
-export function buildHaikuAnalysisPrompt(
-  metadata: VideoMetadata,
-  transcript: string
-): string {
-  return `
-Sen bir AVA AI Video Analiz uzmanısın. Aşağıda teknik özellikleri ve ses deşifresi verilen dikey Instagram videosunu analiz et.
-Videonun analizi tam olarak 4 ana kategoride (toplam 40 parametre) 1-10 puan arasında değerlendirilmeli ve her biri için saniye saniye zaman damgalı öneriler içermelidir.
+export async function extractAudioMetrics(filePath: string): Promise<AudioMetrics> {
+  return new Promise((resolve, reject) => {
+    let lufs = -14; // Default fallback
+    const silencePeriods: Array<{ start: number; end: number; duration: number }> = [];
 
-[VİDEO TEKNİK ÖZELLİKLERİ]
-- Çözünürlük ve En/Boy Oranı: ${metadata.resolution} (${metadata.aspectRatio})
-- Kare Hızı (FPS): ${metadata.fps} fps
-- Bit Hızı (Bitrate): ${metadata.bitrate} bps
-- Video Süresi: ${metadata.duration} saniye
-- Codec: ${metadata.codec}
+    ffmpeg(filePath)
+      .noVideo()
+      .audioFilters("ebur128", "silencedetect=noise=-30dB:d=1")
+      .format("null")
+      .output("-")
+      .on("stderr", (line: string) => {
+        // Parse EBUR128 LUFS
+        const lufsMatch = line.match(/I:\s+([-0-9.]+)\s+LUFS/);
+        if (lufsMatch) {
+          lufs = parseFloat(lufsMatch[1]);
+        }
 
-[SES DEŞİFRESİ (TRANSCRIPTION)]
-"${transcript}"
+        // Parse Silence
+        const silenceEndMatch = line.match(/silence_end:\s+([0-9.]+)\s+\|\s+silence_duration:\s+([0-9.]+)/);
 
-Lütfen aşağıdaki 4 kategorideki 40 parametreyi detaylıca analiz et:
-
-1. TEKNİK PARAMETRELER (FFmpeg):
-   - Cozunurluk & En/Boy Oranı (Instagram için 9:16 olmalı)
-   - FPS & Kare Hızı
-   - Bit Rate & Boyut (Sıkıştırma kalitesi)
-   - Codec Uyumluluğu (H.264/H.265 kontrolü)
-   - Video Süresi (Hedef sürelere uygunluk)
-   - Aydınlatma Skoru (Brightness ve kontrast dengesi)
-   - Stabilizasyon (Sallantı tespiti)
-   - Renk Paleti (Dominant renkler ve filtre tutarlılığı)
-
-2. SES PARAMETRELERİ (FFmpeg + Whisper):
-   - Ses Seviyesi (LUFS loudness normalizasyonu)
-   - Arka Plan Gürültüsü (SNR skoru)
-   - Telif Tespiti (ACRCloud entegrasyonu)
-   - Müzik / Ses Dengesi (Müzik konuşmayı bastırıyor mu?)
-   - Konuşma Hızı (Kelime/dakika oranı)
-   - Sessizlik Analizi (Gereksiz duraklamalar)
-   - Efekt Zamanlaması (Ses efekti kesme noktaları)
-
-3. İÇERİK PARAMETRELERİ (Claude Haiku):
-   - İlk 3 Saniye Kanca Gücü (Kanca tipi)
-   - CTA Gücü & Konumu
-   - Hikaye Akışı (Giriş/Gelişme/Sonuç)
-   - Tempo & Ritim Uyumu
-   - Altyazı Uyumu (Ses-metin senkronizasyonu)
-   - Özgünlük Skoru
-   - Değer Önerisi Netliği
-   - Merak Açığı (Curiosity gap)
-   - Yorum Tetikleyici (Comment hook)
-   - Kaydetme Potansiyeli
-
-4. ALGORİTMA PARAMETRELERİ (Vision + Haiku):
-   - Kapak Karesi Skoru (Tıklanabilirlik)
-   - Trend Uyumu
-   - Yüz Görünürlüğü (Göz teması ve süre)
-   - Paylaşılabilirlik
-   - Hedef Kitle Uyumu (Takipçi demografisiyle örtüşme)
-
-Çıktıyı JSON formatında ver. JSON formatı şu şekilde olmalıdır:
-{
-  "scores": {
-    "Cozunurluk_EnBoyOrani": 9,
-    ...
-  },
-  "suggestions": [
-    { "timestamp": "0:03", "parameter": "Kanca Gücü", "comment": "İlk 3 saniyede soru cümlesiyle başlayarak kanca etkisini artırın." },
-    ...
-  ],
-  "overallScore": 85
-}
-`;
+        if (silenceEndMatch) {
+          const end = parseFloat(silenceEndMatch[1]);
+          const duration = parseFloat(silenceEndMatch[2]);
+          const start = end - duration;
+          silencePeriods.push({ start, end, duration });
+        }
+      })
+      .on("end", () => {
+        resolve({ lufs, silencePeriods });
+      })
+      .on("error", (err: Error) => {
+        reject(err);
+      })
+      .run();
+  });
 }

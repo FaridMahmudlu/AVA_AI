@@ -110,21 +110,23 @@ export function AnalysisPanel() {
     setResult("");
   };
 
+  const [model, setModel] = React.useState("gemini-2.0-flash");
+  const [statusText, setStatusText] = React.useState("");
+
   const handleAnalyze = async () => {
-    if (frameBlobs.length === 0 || isLoading) return;
+    if (!videoFile || isLoading) return;
     setIsLoading(true);
     setResult("");
+    setStatusText("Videonuz backend'de analiz ediliyor (FFmpeg, Whisper, Vision)...");
 
     try {
       const formData = new FormData();
       formData.append("topic", topic || "");
       formData.append("intervalSec", String(SANIYE_ARALIGI));
-      
-      frameBlobs.forEach((blob, i) => {
-        formData.append("frames", blob, `frame-${i}.jpg`);
-      });
+      formData.append("model", model);
+      formData.append("video", videoFile); // Send the raw video file!
 
-      const response = await fetch("/api/analyze", {
+      const response = await fetch("/api/analyze-v2", {
         method: "POST",
         body: formData,
       });
@@ -135,6 +137,8 @@ export function AnalysisPanel() {
       }
       
       if (!response.body) throw new Error("Yanit alinamadi");
+
+      setStatusText("Yapay zeka sonuçları sentezliyor ve yazıyor...");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -164,9 +168,11 @@ export function AnalysisPanel() {
             if (parsed.type === "text-delta" && parsed.delta) {
               fullContent += parsed.delta;
               setResult(fullContent);
+              setStatusText(""); // Clear status text when streaming starts
             } else if (parsed.type === "text" && parsed.text) {
               fullContent = parsed.text;
               setResult(fullContent);
+              setStatusText("");
             } else if (parsed.type === "error" && parsed.errorText) {
               throw new Error(parsed.errorText);
             }
@@ -179,6 +185,7 @@ export function AnalysisPanel() {
       );
     } finally {
       setIsLoading(false);
+      setStatusText("");
     }
   };
 
@@ -202,6 +209,9 @@ export function AnalysisPanel() {
           frames={frames}
           clearVideo={clearVideo}
           onAnalyze={handleAnalyze}
+          model={model}
+          setModel={setModel}
+          statusText={statusText}
         />
       )}
       <canvas ref={canvasRef} className="hidden" />
