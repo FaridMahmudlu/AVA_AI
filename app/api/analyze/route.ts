@@ -105,10 +105,40 @@ export async function POST(req: Request) {
     }
 
     const prompts = await getPrompts();
+    
+    // İnstagram Dil Parmak İzi (Context) Oluşturma
+    let instagramContext = "";
+    try {
+      const { getSession } = await import("@/lib/auth");
+      const user = await getSession();
+      if (user && user.instagramProfileData) {
+        const data = user.instagramProfileData as any;
+        let contextParts = [
+          `Instagram Kullanıcı Adı: @${data.username}`,
+          `Takipçi Sayısı: ${data.followersCount}`,
+        ];
+        if (data.biography) {
+          contextParts.push(`Biyografi: ${data.biography}`);
+        }
+        if (data.recentPosts && Array.isArray(data.recentPosts) && data.recentPosts.length > 0) {
+          contextParts.push(`\nSon Paylaşımların Metinleri (Dil Parmak İzi analizi için):`);
+          data.recentPosts.slice(0, 10).forEach((post: any, i: number) => {
+            if (post.caption) {
+              contextParts.push(`[Post ${i + 1}]: ${post.caption.trim()}`);
+            }
+          });
+        }
+        instagramContext = contextParts.join("\n");
+      }
+    } catch (e) {
+      console.error("Instagram context alinirken hata:", e);
+    }
+
     const promptText = renderTemplate(prompts.analyze.template, {
       topic: topic || "",
       transcript: transcript || "",
       intervalSec: Number(intervalSecRaw) || 2,
+      instagramContext: instagramContext,
     });
 
     // Birden fazla model dene

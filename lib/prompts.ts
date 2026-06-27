@@ -51,10 +51,14 @@ export function renderTemplate(
   const hasTranscript = Boolean(vars.transcript && String(vars.transcript).trim());
   let out = template;
 
-  // {{#if transcript}} ... {{/if}}
+  // {{#if key}} ... {{/if}}
   out = out.replace(
-    /\{\{#if transcript\}\}([\s\S]*?)\{\{\/if\}\}/g,
-    (_m, inner) => (hasTranscript ? inner : ""),
+    /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
+    (_m, key, inner) => {
+      const val = vars[key];
+      const isTruthy = Boolean(val && String(val).trim());
+      return isTruthy ? inner : "";
+    },
   );
 
   // {{key}}
