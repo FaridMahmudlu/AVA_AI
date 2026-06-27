@@ -33,6 +33,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import AvalabsLogo from "@/public/avalabs.png";
 import { useUser, useClerk, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { InstagramConnectButton } from "@/components/instagram-connect-button";
 
 
 type SessionUser = {
@@ -243,8 +244,11 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* ── Right: Pro CTA + Profile ── */}
+          {/* ── Right: Instagram + Pro CTA + Profile ── */}
           <div className="hidden items-center gap-3 lg:flex">
+            {/* Instagram Connect */}
+            <InstagramConnectButton variant="navbar" />
+
             {/* Pro upgrade */}
             <Link
               href="/#pricing"
@@ -308,6 +312,11 @@ export function Navbar() {
             <Link href="/info" onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-all duration-200 ${isActive("/info") ? "bg-primary/5 text-primary font-medium" : "text-slate-600 hover:bg-slate-50"}`}>
               <Instagram className="h-4 w-4" /> Sosyal Medya
             </Link>
+
+            <p className="mt-3 mb-1 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Instagram</p>
+            <div className="px-3">
+              <InstagramConnectButton variant="profile" />
+            </div>
 
             <div className="my-3 h-px bg-slate-100" />
             <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-3 py-3 text-sm text-slate-600 hover:bg-slate-50 rounded-xl"><Settings className="h-4 w-4" /> Hesap Bilgilerim</Link>
