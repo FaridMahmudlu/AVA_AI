@@ -13,11 +13,9 @@ import OpenAI from "openai";
 
 const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
 
 const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
 const openai = createOpenAI({ apiKey: openaiApiKey });
-const anthropic = createAnthropic({ apiKey: anthropicApiKey });
 const openaiClient = new OpenAI({ apiKey: openaiApiKey });
 
 export const maxDuration = 300; // 5 minutes max on Vercel
@@ -134,8 +132,6 @@ export async function POST(req: Request) {
     let selectedModel;
     if (modelSelection.startsWith("gpt")) {
       selectedModel = openai(modelSelection); // e.g. gpt-4o
-    } else if (modelSelection.startsWith("claude")) {
-      selectedModel = anthropic(modelSelection); // e.g. claude-3-5-sonnet-20240620
     } else {
       selectedModel = google(modelSelection); // e.g. gemini-2.5-flash
     }

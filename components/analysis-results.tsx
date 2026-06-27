@@ -116,7 +116,6 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
                 >
                   <option value="gemini-2.0-flash">Gemini 2.0 Flash (Hızlı)</option>
                   <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                  <option value="claude-3-5-sonnet-20240620">Claude 3.5 Sonnet (Güçlü)</option>
                   <option value="gpt-4o">ChatGPT (GPT-4o)</option>
                 </select>
                 <Button onClick={onAnalyze} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
