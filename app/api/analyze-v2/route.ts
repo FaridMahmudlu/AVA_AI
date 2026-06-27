@@ -118,22 +118,27 @@ export async function POST(req: Request) {
     richPrompt += `[Ses] Sessizlik (Silence) Dönemleri: ${audioMetrics.silencePeriods.length} kez sessizlik tespit edildi.\n`;
     richPrompt += `====================================================\n`;
 
-    // 4. Read Frames as Base64 for the Model
+    // 4. Read Frames for the Model
     const imageContents = framePaths.map((framePath: string) => {
       const imgBuffer = fs.readFileSync(framePath);
       return {
         type: "image" as const,
-        image: imgBuffer.toString("base64"),
-        mimeType: "image/jpeg"
+        image: imgBuffer,
       };
     });
 
     // 5. Select Model Based on User's Choice
     let selectedModel;
     if (modelSelection.startsWith("gpt")) {
-      selectedModel = openai(modelSelection); // e.g. gpt-4o
+      if (!process.env.OPENAI_API_KEY) throw new Error("OpenAI API Key (Vercel Environment Variables) bulunamadı! Lütfen ekleyin.");
+      selectedModel = openai(modelSelection);
+    } else if (modelSelection.startsWith("claude")) {
+      if (!process.env.ANTHROPIC_API_KEY) throw new Error("Anthropic (Claude) API Key bulunamadı! Lütfen ekleyin.");
+      const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      selectedModel = anthropic(modelSelection);
     } else {
-      selectedModel = google(modelSelection); // e.g. gemini-2.5-flash
+      if (!googleApiKey) throw new Error("Google (Gemini) API Key bulunamadı!");
+      selectedModel = google(modelSelection);
     }
 
     // 6. Execute Final AI Synthesis
