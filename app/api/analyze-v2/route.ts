@@ -16,7 +16,7 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 
 const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
 const openai = createOpenAI({ apiKey: openaiApiKey });
-const openaiClient = new OpenAI({ apiKey: openaiApiKey });
+const openaiClient = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
 
 export const maxDuration = 300; // 5 minutes max on Vercel
 
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     
     // B. Whisper Transcription
     const transcriptPromise = extractAudio(tempVideoPath, tempAudioPath).then(async (audioPath) => {
-      if (!openaiApiKey) return "Whisper API Key eksik. Transkript alınamadı.";
+      if (!openaiClient) return "Whisper API Key eksik. Transkript alınamadı.";
       try {
         const response = await openaiClient.audio.transcriptions.create({
           file: fs.createReadStream(audioPath),
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
     richPrompt += `====================================================\n`;
 
     // 4. Read Frames as Base64 for the Model
-    const imageContents = framePaths.map((framePath) => {
+    const imageContents = framePaths.map((framePath: string) => {
       const imgBuffer = fs.readFileSync(framePath);
       return {
         type: "image" as const,
@@ -152,9 +152,9 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse();
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Analyze v2 Hatası:", error);
-    return Response.json({ error: "Analiz sırasında hata oluştu" }, { status: 500 });
+    return Response.json({ error: error.message || "Analiz sırasında hata oluştu" }, { status: 500 });
   } finally {
     // Cleanup Temp Files
     try {
