@@ -175,6 +175,16 @@ export function AnalysisResults({ score, caption, sections, result, isLoading, v
               ))}
             </div>
           )}
+
+          {result && sections.length === 0 && (
+            <Alert className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 mt-4">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <AlertTitle className="text-red-800 dark:text-red-300 font-bold text-base">Sistem Mesajı / Hata</AlertTitle>
+              <AlertDescription className="text-red-700 dark:text-red-400/80 mt-2 text-sm whitespace-pre-wrap">
+                {result}
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
     </div>
