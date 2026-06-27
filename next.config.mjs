@@ -10,7 +10,12 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  }
+  },
+  serverExternalPackages: [
+    '@ffmpeg-installer/ffmpeg', 
+    '@ffprobe-installer/ffprobe', 
+    'fluent-ffmpeg'
+  ]
 }
 
 export default nextConfig
